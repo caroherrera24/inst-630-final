@@ -2,51 +2,66 @@ import * as THREE from 'three';
 window.THREE = THREE;
 import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
 import ThreeGlobe from "three-globe";
-console.log(ThreeGlobe)
 
-    const Globe = new ThreeGlobe()
-      .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-      .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png');
+// create the globe
+const globe = new ThreeGlobe()
+  .globeImageUrl('public/images/earth-map.jpg')
+  .bumpImageUrl('public/images/earth-bump.jpg');
 
-    // custom globe material
-    const globeMaterial = Globe.globeMaterial();
-    globeMaterial.bumpScale = 10;
-    new THREE.TextureLoader().load('//unpkg.com/three-globe/example/img/earth-water.png', texture => {
-      globeMaterial.specularMap = texture;
-      globeMaterial.specular = new THREE.Color('grey');
-      globeMaterial.shininess = 15;
-    });
+// add clouds to the globe
+let CLOUDS_ALT = 0.004;
+let cloudRadius = globe.getGlobeRadius() * (1 + CLOUDS_ALT);
+const cloudGeometry = new THREE.SphereGeometry(cloudRadius, 75, 75);
+const clouds =  new THREE.Mesh(cloudGeometry);
+const cloudLoader = new THREE.TextureLoader();
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6 * Math.PI);
-    directionalLight.position.set(1, 1, 1); // change light position to see the specularMap's effect
+cloudLoader.load("public/images/earth-clouds.png", cloudsTexture => {
+  clouds.material = new THREE.MeshPhongMaterial({
+    map: cloudsTexture,
+    transparent: true,
+    opacity: 0.8
+  });
+});
+globe.add(clouds);
 
-    // Setup renderer
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.getElementById('globeViz').appendChild(renderer.domElement);
+// setup lights
+const ambientLight = new THREE.AmbientLight(0xe3e3e3, 5);
+const directionalLight = new THREE.DirectionalLight(0xfdfcf0, 1);
+directionalLight.position.set(20, 10, 20);
 
-    // Setup scene
-    const scene = new THREE.Scene();
-    scene.add(Globe);
-    scene.add(new THREE.AmbientLight(0xcccccc, Math.PI));
-    scene.add(directionalLight);
+// setup renderer
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // Setup camera
-    const camera = new THREE.PerspectiveCamera();
-    camera.aspect = window.innerWidth/window.innerHeight;
-    camera.updateProjectionMatrix();
-    camera.position.z = 500;
+// add renderer to the DOM
+const globeViz = document.querySelector('#globeViz');
+globeViz.appendChild(renderer.domElement);
 
-    // Add camera controls
-    const tbControls = new TrackballControls(camera, renderer.domElement);
-    tbControls.minDistance = 101;
-    tbControls.rotateSpeed = 5;
-    tbControls.zoomSpeed = 0.8;
+// setup scene
+const scene = new THREE.Scene();
+scene.add(globe);
+scene.add(ambientLight);
+scene.add(directionalLight);
 
-    // Kick-off renderer
-    (function animate() { // IIFE
-      // Frame cycle
-      tbControls.update();
-      renderer.render(scene, camera);
-      requestAnimationFrame(animate);
-    })();
+// setup camera
+const camera = new THREE.PerspectiveCamera();
+camera.aspect = window.innerWidth/window.innerHeight;
+camera.updateProjectionMatrix();
+camera.position.set(250,250,10);
+
+// add camera controls
+const tbControls = new TrackballControls(camera, renderer.domElement);
+tbControls.minDistance = 100;
+tbControls.rotateSpeed = 5;
+tbControls.zoomSpeed = 0.8;
+
+// kick-off renderer
+(function animate() {
+  // rotate the globe and clouds
+  globe.rotation.y += .0005;
+  clouds.rotation.y -= 0.00025 * Math.PI / 180;
+
+  tbControls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+})();
