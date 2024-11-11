@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 window.THREE = THREE;
 import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
+import { OrbitControls } from "https://threejs.org/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import ThreeGlobe from "three-globe";
 
 // create the globe
@@ -32,6 +34,23 @@ const starMaterial = new THREE.MeshPhongMaterial({
 });
 const starField = new THREE.Mesh(starGeometry, starMaterial);
 
+const loader = new GLTFLoader();
+						loader.load( 'public/asteroid.glb', async function ( gltf ) {
+
+							const model = gltf.scene;
+              model.scale.set( 0.1, 0.1, 0.1 );
+              model.position.set(100, 175, -150)
+
+							// wait until the model can be added to the scene without blocking due to shader compilation
+
+							await renderer.compileAsync( model, camera, scene );
+
+							scene.add( model );
+
+							render();
+			
+						} );
+
 // setup lights
 const ambientLight = new THREE.AmbientLight(0xe3e3e3, 5);
 const directionalLight = new THREE.DirectionalLight(0xfdfcf0, 1);
@@ -59,11 +78,17 @@ camera.updateProjectionMatrix();
 camera.position.set(250,250,10);
 
 // add camera controls
-const tbControls = new TrackballControls(camera, renderer.domElement);
-tbControls.minDistance = 100;
-tbControls.maxDistance = 1000;
-tbControls.rotateSpeed = 5;
-tbControls.zoomSpeed = 0.8;
+// const controls = new TrackballControls(camera, renderer.domElement);
+// controls.minDistance = 100;
+// controls.maxDistance = 1000;
+// controls.rotateSpeed = 5;
+// controls.zoomSpeed = 0.8;
+
+const controls = new OrbitControls( camera, renderer.domElement );
+controls.minDistance = 100;
+controls.maxDistance = 1000;
+controls.rotateSpeed = 0.4;
+controls.zoomSpeed = 0.8;
 
 // kick-off renderer
 (function animate() {
@@ -71,7 +96,13 @@ tbControls.zoomSpeed = 0.8;
   globe.rotation.y += .0005;
   clouds.rotation.y += 0.004 * Math.PI / 180;
 
-  tbControls.update();
-  renderer.render(scene, camera);
+  controls.update();
+  render();
   requestAnimationFrame(animate);
 })();
+
+function render() {
+
+  renderer.render( scene, camera );
+
+}
