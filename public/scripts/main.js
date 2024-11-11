@@ -124,13 +124,11 @@ function onWindowResize() {
 })();
 
 function render() {
-
   renderer.render( scene, camera );
-
 }
 
 function calcPosition(lat,lon){
-  const parisSpherical = {
+  const convertToRad = {
     lat: THREE.MathUtils.degToRad(90 - lat),
     lon: THREE.MathUtils.degToRad(lon)
   };
@@ -138,13 +136,12 @@ function calcPosition(lat,lon){
   
   let radius = 100;
   
-  const parisVector = new THREE.Vector3().setFromSphericalCoords(
+  const vector = new THREE.Vector3().setFromSphericalCoords(
     radius,
-    parisSpherical.lat,
-    parisSpherical.lon
+    convertToRad.lat,
+    convertToRad.lon
   );
 
-  return parisVector
-
+  return vector
 }
 
