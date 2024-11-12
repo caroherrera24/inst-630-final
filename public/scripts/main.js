@@ -4,13 +4,14 @@ import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
 import { OrbitControls } from "https://threejs.org/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import ThreeGlobe from "three-globe";
+gsap.registerPlugin(EasePack);
 
 let model;
 
 // create the globe
 const globe = new ThreeGlobe()
   .globeImageUrl('public/images/earth-map.jpg')
-  .bumpImageUrl('public/images/earth-bump.jpg');
+  .bumpImageUrl('public/images/earth-bump.jpg')
 
 // add clouds to the globe
 let CLOUDS_ALT = 0.01;
@@ -38,22 +39,31 @@ const starMaterial = new THREE.MeshPhongMaterial({
 const starField = new THREE.Mesh(starGeometry, starMaterial);
 
 const loader = new GLTFLoader();
-						loader.load( 'public/asteroid.glb', async function ( gltf ) {
+loader.load( 'public/asteroid.glb', async function ( gltf ) {
 
-							model = gltf.scene;
-              model.scale.set( 0.05, 0.05, 0.05 );
-              // model.position.set(100, 175, -150);
-              const site = calcPosition(9.53333, 39.71667);
-              model.position.set(site.x, site.y, site.z);
+  model = gltf.scene;
+  model.scale.set( 0.1, 0.1, 0.1 );
+  model.position.set(1000, 1750, -1500);
+  const site = calcPosition(9.53333, 39.71667);
+  // model.position.set(site.x, site.y, site.z);
 
-							// wait until the model can be added to the scene without blocking due to shader compilation
-							await renderer.compileAsync( model, camera, scene );
+  // add animation for meteorite landings on the globe
+  var tl = gsap.timeline({repeat: 2, repeatDelay: 1});
+  tl.to(
+    model.position,
+    {x: site.x, y: site.y, z: site.z, duration: 2, ease: "power1.out"}
+  );
+  tl.to(model.scale,0.5, {x: 0.02, y: 0.02, z: 0.02}, "-=0.5");
+  // tl.to(model.scale,1, {x: 0.0, y: 0.0, z: 0.0}, "-=0.65");
 
-							scene.add( model );
+  // wait until the model can be added to the scene without blocking due to shader compilation
+  await renderer.compileAsync( model, camera, scene );
 
-							render();
-			
-						} );
+  scene.add( model );
+
+  render();
+
+} );
 
 // setup lights
 const ambientLight = new THREE.AmbientLight(0xe3e3e3, 5);
@@ -111,7 +121,7 @@ function onWindowResize() {
 (function animate() {
   // rotate the globe and clouds
   // globe.rotation.y += .0005;
-  clouds.rotation.y += 0.004 * Math.PI / 180;
+  clouds.rotation.y += 0.008 * Math.PI / 180;
 
   if (model) {
     model.rotation.x += 0.01;
@@ -132,7 +142,7 @@ function calcPosition(lat,lon){
     lat: THREE.MathUtils.degToRad(90 - lat),
     lon: THREE.MathUtils.degToRad(lon)
   };
-  // console.log(parisSpherical);
+  console.log(convertToRad);
   
   let radius = 100;
   

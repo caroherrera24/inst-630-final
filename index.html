@@ -6,17 +6,23 @@
 		<style>
 			body { margin: 0; }
 		</style>
-        <script type="importmap">
-                {
-                  "imports": {
-                    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-                    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
-                    "three-globe": "https://esm.sh/three-globe@2.34.3"
-                  }
-                }
-          </script>
-          <!-- <script src="https://cdn.jsdelivr.net/npm/three-globe@2.34.3/dist/three-globe.min.js"></script> -->
-          <!-- <script src="//unpkg.com/three-globe" defer></script> -->
+
+    <!-- import threejs and three-globe -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+          "three-globe": "https://esm.sh/three-globe@2.34.3"
+        }
+      }
+      </script>
+
+    <!-- import gsap -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/EasePack.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/three-globe@2.34.3/dist/three-globe.min.js"></script> -->
+    <!-- <script src="//unpkg.com/three-globe" defer></script> -->
 	</head>
 	<body>
         <div id="globeViz"></div>
