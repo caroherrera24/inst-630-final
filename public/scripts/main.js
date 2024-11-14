@@ -8,19 +8,16 @@ import ThreeGlobe from "three-globe";
 gsap.registerPlugin(EasePack);
 
 const results = await promiseData("cleaned-data.json");
-console.log(results);
-
-let model;
+// console.log(results);
 
 // create the globe
 const globe = new ThreeGlobe()
   .globeImageUrl('public/images/earth-map.jpg')
-  .bumpImageUrl('public/images/earth-bump.jpg')
+  .bumpImageUrl('public/images/earth-bump.jpg');
 
 // add clouds to the globe
 let CLOUDS_ALT = 0.01;
 let cloudRadius = globe.getGlobeRadius() * (1 + CLOUDS_ALT);
-console.log(globe.getGlobeRadius())
 const cloudGeometry = new THREE.SphereGeometry(cloudRadius, 75, 75);
 const cloudLoader = new THREE.TextureLoader().load("public/images/earth-clouds.png");
 const cloudMaterial = new THREE.MeshPhongMaterial({
@@ -42,39 +39,48 @@ const starMaterial = new THREE.MeshPhongMaterial({
 });
 const starField = new THREE.Mesh(starGeometry, starMaterial);
 
-const loader = new GLTFLoader();
-loader.load( 'public/asteroid.glb', async function ( gltf ) {
+// creates timeline for animation
+const tl = gsap.timeline();
 
-  model = gltf.scene;
+// loop over each item of data
+for (const row of results) {
+const loader = new GLTFLoader();
+loader.load( 'public/asteroid.glb', ( gltf ) => {
+
+  const model = gltf.scene;
   model.scale.set( 0.1, 0.1, 0.1 );
   model.position.set(1000, 1750, -1500);
-  const site = calcPosition(9.53333, 39.71667);
+  const site = calcPosition(row.lat, row.long);
   // model.position.set(site.x, site.y, site.z);
 
   // add animation for meteorite landings on the globe
-  const tl = gsap.timeline({repeat: 2, repeatDelay: 1});
-  tl.to(
-    model.position,
-    {x: site.x, y: site.y, z: site.z, duration: 2, ease: "power1.out"}
-  );
-  // tl.to(model.scale,0.5, {x: 0.02, y: 0.02, z: 0.02}, "-=0.5");
-  tl.to(model.scale,1, {x: 0.0, y: 0.0, z: 0.0}, "-=0.65");
-  const animation  = () => {
-    globe.ringsData(results)
-          .ringLat(9.53333)
-          .ringLng(39.71667);
-  }
+  tl.to(model.position, { x: site.x, y: site.y, z: site.z, duration: 2, ease: "power1.out" });
+  tl.to(model.scale, 1, { x: 0, y: 0, z: 0 }, "-=0.65");;
 
-  tl.add(animation, 1.75);
+    // rotate meteorite 
+    model.rotation.x += 0.01;
+    model.rotation.y += 0.01;
+  
+  const animation = () => {
+    globe.ringsData([row])
+      .ringLat(row.lat)
+      .ringLng(row.long)
+      .ringColor(() => "#FF0000")
+      .ringRepeatPeriod(900);
+  };
+  tl.add(animation);
+  tl.set({}, {}, "+=1")
 
+  setTimeout(() => {
   // wait until the model can be added to the scene without blocking due to shader compilation
-  await renderer.compileAsync( model, camera, scene );
-
+  // console.log([row])
+  
   scene.add( model );
 
   render();
-
+  }, 100)
 } );
+}
 
 // setup lights
 const ambientLight = new THREE.AmbientLight(0xe3e3e3, 5);
@@ -103,18 +109,13 @@ camera.updateProjectionMatrix();
 camera.position.set(250,250,10);
 
 // add camera controls
-// const controls = new TrackballControls(camera, renderer.domElement);
-// controls.minDistance = 100;
-// controls.maxDistance = 1000;
-// controls.rotateSpeed = 5;
-// controls.zoomSpeed = 0.8;
-
 const controls = new OrbitControls( camera, renderer.domElement );
 controls.minDistance = 101;
 controls.maxDistance = 1000;
 controls.rotateSpeed = 0.4;
 controls.zoomSpeed = 0.8;
 
+// update content's size if the window's size changes
 window.addEventListener( 'resize', onWindowResize );
 
 function onWindowResize() {
@@ -134,11 +135,6 @@ function onWindowResize() {
   // globe.rotation.y += .0005;
   clouds.rotation.y += 0.008 * Math.PI / 180;
 
-  if (model) {
-    model.rotation.x += 0.01;
-    model.rotation.y += 0.01;
-  }
-
   controls.update();
   render();
   requestAnimationFrame(animate);
@@ -148,12 +144,13 @@ function render() {
   renderer.render( scene, camera );
 }
 
+// converts latitude and longitude to spherical coordinates on the globe
 function calcPosition(lat,lon){
   const convertToRad = {
     lat: THREE.MathUtils.degToRad(90 - lat),
     lon: THREE.MathUtils.degToRad(lon)
   };
-  console.log(convertToRad);
+  // console.log(convertToRad);
   
   let radius = 100;
   
