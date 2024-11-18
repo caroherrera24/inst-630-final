@@ -7,8 +7,59 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import ThreeGlobe from "three-globe";
 gsap.registerPlugin(EasePack);
 
-const results = await promiseData("cleaned-data.json");
-// console.log(results);
+let renderer;
+
+(async () => {
+  const results = await promiseData("cleaned-data.json");
+  // console.log(results);
+
+  // creates timeline for animation
+  const tl = gsap.timeline();
+
+  // loop over each item of data
+  for (const row of results) {
+    const loader = new GLTFLoader();
+    loader.load( 'public/asteroid.glb', ( gltf ) => {
+
+      const model = gltf.scene;
+      model.scale.set( 0.1, 0.1, 0.1 );
+      if (row.long < -20) {
+        model.position.set(0, 0, -1500);
+      } else {
+        model.position.set(1000, 1750, -1500);
+      }
+      const site = calcPosition(row.lat, row.long);
+      // model.position.set(site.x, site.y, site.z);
+
+      // add animation for meteorite landings on the globe
+      tl.to(model.position, { x: site.x, y: site.y, z: site.z, duration: 1, ease: "power1.out" });
+      tl.to(model.scale, 1, { x: 0, y: 0, z: 0 }, "-=0.65");
+
+        // rotate meteorite 
+        // model.rotation.x += 0.01;
+        // model.rotation.y += 0.01;
+      
+      const animation = () => {
+        globe.ringsData([row])
+          .ringLat(row.lat)
+          .ringLng(row.long)
+          .ringColor(() => "#FF0000")
+          .ringRepeatPeriod(1000);
+      };
+      tl.add(animation);
+      // tl.set({}, {}, "+=0.15")
+
+      setTimeout(() => {
+      // wait until the model can be added to the scene without blocking due to shader compilation
+      // console.log([row])
+      
+      scene.add( model );
+
+      render();
+      }, 50)
+    } );
+  }
+})();
 
 // create the globe
 const globe = new ThreeGlobe()
@@ -39,48 +90,7 @@ const starMaterial = new THREE.MeshPhongMaterial({
 });
 const starField = new THREE.Mesh(starGeometry, starMaterial);
 
-// creates timeline for animation
-const tl = gsap.timeline();
-
-// loop over each item of data
-for (const row of results) {
-const loader = new GLTFLoader();
-loader.load( 'public/asteroid.glb', ( gltf ) => {
-
-  const model = gltf.scene;
-  model.scale.set( 0.1, 0.1, 0.1 );
-  model.position.set(1000, 1750, -1500);
-  const site = calcPosition(row.lat, row.long);
-  // model.position.set(site.x, site.y, site.z);
-
-  // add animation for meteorite landings on the globe
-  tl.to(model.position, { x: site.x, y: site.y, z: site.z, duration: 2, ease: "power1.out" });
-  tl.to(model.scale, 1, { x: 0, y: 0, z: 0 }, "-=0.65");;
-
-    // rotate meteorite 
-    model.rotation.x += 0.01;
-    model.rotation.y += 0.01;
-  
-  const animation = () => {
-    globe.ringsData([row])
-      .ringLat(row.lat)
-      .ringLng(row.long)
-      .ringColor(() => "#FF0000")
-      .ringRepeatPeriod(900);
-  };
-  tl.add(animation);
-  tl.set({}, {}, "+=1")
-
-  setTimeout(() => {
-  // wait until the model can be added to the scene without blocking due to shader compilation
-  // console.log([row])
-  
-  scene.add( model );
-
-  render();
-  }, 100)
-} );
-}
+console.log(vertices);
 
 // setup lights
 const ambientLight = new THREE.AmbientLight(0xe3e3e3, 5);
@@ -88,7 +98,7 @@ const directionalLight = new THREE.DirectionalLight(0xfdfcf0, 1);
 directionalLight.position.set(20, 10, 20);
 
 // setup renderer
-const renderer = new THREE.WebGLRenderer();
+renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 
 // add renderer to the DOM
@@ -115,9 +125,9 @@ controls.maxDistance = 1000;
 controls.rotateSpeed = 0.4;
 controls.zoomSpeed = 0.8;
 
-// update content's size if the window's size changes
 window.addEventListener( 'resize', onWindowResize );
 
+// update content's size if the window's size changes
 function onWindowResize() {
 
   camera.aspect = window.innerWidth / window.innerHeight;
