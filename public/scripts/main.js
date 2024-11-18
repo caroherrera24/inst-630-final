@@ -25,7 +25,7 @@ let vertices = [];
       const model = gltf.scene;
       model.scale.set( 0.1, 0.1, 0.1 );
       if (row.long < -20) {
-        model.position.set(0, 0, -1000);
+        model.position.set(-1500, 1750, 1000);
       } else {
         model.position.set(1000, 1750, -1500);
       }
@@ -36,30 +36,30 @@ let vertices = [];
       vertices.push(site);
 
       // add animation for meteorite landings on the globe
-      tl.to(model.position, { x: site.x, y: site.y, z: site.z, duration: 1.2, ease: "power1.out" });
+      tl.to(model.position, { x: site.x, y: site.y, z: site.z, duration: 1.5, ease: "power1.out" });
       tl.to(model.scale, 1, { x: 0, y: 0, z: 0 }, "-=0.65");
-
-        // rotate meteorite 
-        // model.rotation.x += 0.01;
-        // model.rotation.y += 0.01;
       
       const animation = () => {
         globe.ringsData([row])
           .ringLat(row.lat)
           .ringLng(row.long)
           .ringColor(() => "#FF0000")
-          .ringRepeatPeriod(1200);
+          .ringRepeatPeriod(1500);
       };
       tl.add(animation);
       // tl.set({}, {}, "+=1")
 
-      setTimeout(() => {
-      // wait until the model can be added to the scene without blocking due to shader compilation
-      // console.log([row])
-      
+      setTimeout(() => {      
       scene.add( model );
 
-      render();
+      (function animate2() {
+        // rotate the meteorite model
+        model.rotation.x += 0.05;
+        model.rotation.y += 0.05;
+        model.rotation.z += 0.05;
+        requestAnimationFrame(animate2);
+      })();
+
       }, 50)
     } );
   }
@@ -176,4 +176,3 @@ function calcPosition(lat,lon){
 
   return vector
 }
-
