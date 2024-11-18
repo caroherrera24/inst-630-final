@@ -8,6 +8,7 @@ import ThreeGlobe from "three-globe";
 gsap.registerPlugin(EasePack);
 
 let renderer;
+let vertices = [];
 
 (async () => {
   const results = await promiseData("cleaned-data.json");
@@ -24,15 +25,18 @@ let renderer;
       const model = gltf.scene;
       model.scale.set( 0.1, 0.1, 0.1 );
       if (row.long < -20) {
-        model.position.set(0, 0, -1500);
+        model.position.set(0, 0, -1000);
       } else {
         model.position.set(1000, 1750, -1500);
       }
       const site = calcPosition(row.lat, row.long);
       // model.position.set(site.x, site.y, site.z);
 
+      // push site positions to verticies array
+      vertices.push(site);
+
       // add animation for meteorite landings on the globe
-      tl.to(model.position, { x: site.x, y: site.y, z: site.z, duration: 1, ease: "power1.out" });
+      tl.to(model.position, { x: site.x, y: site.y, z: site.z, duration: 1.2, ease: "power1.out" });
       tl.to(model.scale, 1, { x: 0, y: 0, z: 0 }, "-=0.65");
 
         // rotate meteorite 
@@ -44,10 +48,10 @@ let renderer;
           .ringLat(row.lat)
           .ringLng(row.long)
           .ringColor(() => "#FF0000")
-          .ringRepeatPeriod(1000);
+          .ringRepeatPeriod(1200);
       };
       tl.add(animation);
-      // tl.set({}, {}, "+=0.15")
+      // tl.set({}, {}, "+=1")
 
       setTimeout(() => {
       // wait until the model can be added to the scene without blocking due to shader compilation
