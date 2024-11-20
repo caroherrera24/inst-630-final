@@ -10,6 +10,13 @@ gsap.registerPlugin(EasePack);
 let renderer;
 let vertices = [];
 
+const loadingManager = new THREE.LoadingManager( () => {
+	
+  const loadingScreen = document.querySelector( '#loading-screen' );
+  loadingScreen.classList.add( 'fade-out' );
+    
+} );
+
 (async () => {
   const results = await promiseData("cleaned-data.json");
   // console.log(results);
@@ -19,7 +26,7 @@ let vertices = [];
 
   // loop over each item of data
   for (const row of results) {
-    const loader = new GLTFLoader();
+    const loader = new GLTFLoader( loadingManager);
     loader.load( 'public/asteroid.glb', ( gltf ) => {
 
       const model = gltf.scene;
@@ -106,8 +113,9 @@ renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 
 // add renderer to the DOM
-const globeViz = document.querySelector('#globeViz');
-globeViz.appendChild(renderer.domElement);
+document.body.appendChild( renderer.domElement );
+// const globeViz = document.querySelector('#globeViz');
+// globeViz.appendChild(renderer.domElement);
 
 // setup scene
 const scene = new THREE.Scene();

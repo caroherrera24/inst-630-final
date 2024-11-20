@@ -23,9 +23,22 @@
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/EasePack.min.js"></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/three-globe@2.34.3/dist/three-globe.min.js"></script> -->
     <!-- <script src="//unpkg.com/three-globe" defer></script> -->
+
+    <!-- link to stylesheet -->
+    <link rel="stylesheet" href="public/styles.css">
+
+    <!-- link to google fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
 	</head>
 	<body>
-        <div id="globeViz"></div>
+    <div id="loading-screen">
+      <!-- <p class="loading-text">Meteoroids are rocks that float in space. When they begin falling onto Earth, most burn up in the atmostphere; they are called meteors. Those that survive and hit the Earth are meteorites.</p> -->
+      <p class="loading-text">People have been recording meteorite landings for hundreds of years.</p>
+      <p class="loading-text">Wait to see history in action. Loading space...</p>
+      <div id="progress-bar"></div>
+    </div>    
 		<script type="module" src="public/scripts/main.js"></script>
 	</body>
 </html>
