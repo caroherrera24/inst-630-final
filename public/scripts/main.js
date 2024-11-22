@@ -6,14 +6,21 @@ import { OrbitControls } from "https://threejs.org/examples/jsm/controls/OrbitCo
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import ThreeGlobe from "three-globe";
 gsap.registerPlugin(EasePack);
+gsap.registerPlugin(TextPlugin);
 
 let renderer;
 let vertices = [];
+let yearText = document.createElement("p");
+let loadingScreen = document.querySelector( '#loading-screen' );
 
 const loadingManager = new THREE.LoadingManager( () => {
 	
-  const loadingScreen = document.querySelector( '#loading-screen' );
-  loadingScreen.classList.add( 'fade-out' );
+  loadingScreen.classList.add( 'fade-out' ); 
+  loadingScreen.addEventListener( 'transitionend', onTransitionEnd );
+
+  yearText.id = "info";
+  // yearText.innerHTML = "year placeholder";
+  globeViz.appendChild(yearText);
     
 } );
 
@@ -43,17 +50,18 @@ const loadingManager = new THREE.LoadingManager( () => {
       vertices.push(site);
 
       // add animation for meteorite landings on the globe
-      tl.to(model.position, { x: site.x, y: site.y, z: site.z, duration: 1.5, ease: "power1.out" });
-      tl.to(model.scale, 1, { x: 0, y: 0, z: 0 }, "-=0.65");
-      
+      tl.to(yearText, { duration: 1, text: row.year, repeat: 1, repeatDelay: 2, yoyo: true });
+      tl.to(model.position, { x: site.x, y: site.y, z: site.z, duration: 1, ease: "power1.out" }, "<");
+      tl.to(model.scale, 1, { x: 0, y: 0, z: 0 }, "<+=0.5");
+
       const animation = () => {
         globe.ringsData([row])
           .ringLat(row.lat)
           .ringLng(row.long)
           .ringColor(() => "#FF0000")
-          .ringRepeatPeriod(1500);
+          .ringRepeatPeriod(3000);
       };
-      tl.add(animation);
+      tl.add(animation, ">");
       // tl.set({}, {}, "+=1")
 
       setTimeout(() => {      
@@ -113,9 +121,11 @@ renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 
 // add renderer to the DOM
-document.body.appendChild( renderer.domElement );
+const globeViz = document.createElement("div");
+globeViz.id = "globeViz";
 // const globeViz = document.querySelector('#globeViz');
-// globeViz.appendChild(renderer.domElement);
+globeViz.appendChild(renderer.domElement);
+document.body.insertBefore( globeViz, loadingScreen );
 
 // setup scene
 const scene = new THREE.Scene();
@@ -183,4 +193,10 @@ function calcPosition(lat,lon){
   );
 
   return vector
+}
+
+function onTransitionEnd( event ) {
+
+	event.target.remove();
+	
 }

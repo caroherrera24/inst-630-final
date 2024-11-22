@@ -103,3 +103,14 @@ html, body {
         transform: rotate(360deg);
     }
 }
+
+#globeViz p {
+    font-family: 'Orbitron', sans-serif;
+    position: absolute;
+    top: 10px;
+    width: 100%;
+	text-align: center;
+	z-index: 100;
+	display:block;
+    font-size: 36px;
+}
