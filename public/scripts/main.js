@@ -25,7 +25,7 @@ const loadingManager = new THREE.LoadingManager( () => {
 } );
 
 (async () => {
-  const results = await promiseData("cleaned-data.json");
+  const results = await promiseData("data/cleaned-data.json");
   // console.log(results);
 
   // creates timeline for animation
