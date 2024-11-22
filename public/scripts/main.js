@@ -67,12 +67,12 @@ const loadingManager = new THREE.LoadingManager( () => {
       setTimeout(() => {      
       scene.add( model );
 
-      (function animate2() {
+      (function rotateMeteorite() {
         // rotate the meteorite model
         model.rotation.x += 0.05;
         model.rotation.y += 0.05;
         model.rotation.z += 0.05;
-        requestAnimationFrame(animate2);
+        requestAnimationFrame(rotateMeteorite);
       })();
 
       }, 50)
