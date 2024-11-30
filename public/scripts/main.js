@@ -43,7 +43,7 @@ const loadingManager = new THREE.LoadingManager( () => {
       } else {
         model.position.set(1000, 1750, -1500);
       }
-      const site = calcPosition(row.lat, row.long);
+      const site = globe.getCoords(row.lat, row.long);
       // model.position.set(site.x, site.y, site.z);
 
       // push site positions to verticies array
@@ -174,25 +174,6 @@ function onWindowResize() {
 
 function render() {
   renderer.render( scene, camera );
-}
-
-// converts latitude and longitude to spherical coordinates on the globe
-function calcPosition(lat,lon){
-  const convertToRad = {
-    lat: THREE.MathUtils.degToRad(90 - lat),
-    lon: THREE.MathUtils.degToRad(lon)
-  };
-  // console.log(convertToRad);
-  
-  let radius = 100;
-  
-  const vector = new THREE.Vector3().setFromSphericalCoords(
-    radius,
-    convertToRad.lat,
-    convertToRad.lon
-  );
-
-  return vector
 }
 
 function onTransitionEnd( event ) {
