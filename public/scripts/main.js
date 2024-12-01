@@ -1,7 +1,6 @@
 import promiseData from './meteorites.js';
 import * as THREE from 'three';
 window.THREE = THREE;
-import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
 import { OrbitControls } from "https://threejs.org/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import ThreeGlobe from "three-globe";
@@ -9,9 +8,14 @@ gsap.registerPlugin(EasePack);
 gsap.registerPlugin(TextPlugin);
 
 let renderer;
-let vertices = [];
 let yearText = document.createElement("p");
 let loadingScreen = document.querySelector( '#loading-screen' );
+
+// initalize points geometry and its positions
+const MAX_POINTS = 1065;
+const pointGeometry = new THREE.BufferGeometry();
+let pointPositions = new Float32Array( MAX_POINTS * 3 );
+pointGeometry.setAttribute( 'position', new THREE.BufferAttribute( pointPositions, 3 ) );
 
 const loadingManager = new THREE.LoadingManager( () => {
 	
@@ -32,7 +36,16 @@ const loadingManager = new THREE.LoadingManager( () => {
   const tl = gsap.timeline();
 
   // loop over each item of data
+  let index = 0;
   for (const row of results) {
+    // convert latitude and longitude to polar coordinates
+    const site = globe.getCoords(row.lat, row.long);
+
+    // update points geometry's position
+    positionAttribute.setXYZ( index, site.x, site.y, site.z );
+    pointGeometry.attributes.position.needsUpdate = true;
+    // console.log(pointPositions)
+
     const loader = new GLTFLoader( loadingManager);
     loader.load( 'public/asteroid.glb', ( gltf ) => {
 
@@ -43,11 +56,7 @@ const loadingManager = new THREE.LoadingManager( () => {
       } else {
         model.position.set(1000, 1750, -1500);
       }
-      const site = globe.getCoords(row.lat, row.long);
       // model.position.set(site.x, site.y, site.z);
-
-      // push site positions to verticies array
-      vertices.push(site);
 
       // add animation for meteorite landings on the globe
       tl.to(yearText, { duration: 1.2, text: row.year, repeat: 1, repeatDelay: 2, yoyo: true });
@@ -77,6 +86,8 @@ const loadingManager = new THREE.LoadingManager( () => {
 
       }, 50)
     } );
+
+    index++;
   }
 })();
 
@@ -109,7 +120,13 @@ const starMaterial = new THREE.MeshPhongMaterial({
 });
 const starField = new THREE.Mesh(starGeometry, starMaterial);
 
-console.log(vertices);
+// add point particles to the globe
+const pointMaterial = new THREE.PointsMaterial( { color: 0x00ff02, size: 10, transparent: true,} );
+// add to pointMaterial later-> opacity: 0
+const particles = new THREE.Points( pointGeometry, pointMaterial );
+const positionAttribute = particles.geometry.getAttribute( 'position' );
+globe.add( particles );
+
 
 // setup lights
 const ambientLight = new THREE.AmbientLight(0xe3e3e3, 5);
