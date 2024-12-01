@@ -18,8 +18,7 @@ const loadingManager = new THREE.LoadingManager( () => {
   loadingScreen.classList.add( 'fade-out' ); 
   loadingScreen.addEventListener( 'transitionend', onTransitionEnd );
 
-  yearText.id = "info";
-  // yearText.innerHTML = "year placeholder";
+  yearText.id = "year-text";
   globeViz.appendChild(yearText);
     
 } );
