@@ -7,24 +7,35 @@ import ThreeGlobe from "three-globe";
 gsap.registerPlugin(EasePack);
 gsap.registerPlugin(TextPlugin);
 
-let renderer;
+let renderer, INTERSECTED;
 let yearText = document.createElement("p");
 let loadingScreen = document.querySelector( '#loading-screen' );
+let tooltip = document.createElement("div");
 
 // initalize points geometry and its positions
 const MAX_POINTS = 1065;
+const PARTICLE_SIZE = 5;
 const pointGeometry = new THREE.BufferGeometry();
 let pointPositions = new Float32Array( MAX_POINTS * 3 );
-pointGeometry.setAttribute( 'position', new THREE.BufferAttribute( pointPositions, 3 ) );
+let sizes = new Float32Array( MAX_POINTS );
 
+pointGeometry.setAttribute( 'position', new THREE.BufferAttribute( pointPositions, 3 ) );
+pointGeometry.setAttribute( 'size', new THREE.BufferAttribute( sizes, 1 ) );
+
+// setup userData array to add to later
+pointGeometry.userData = [];
+
+// keep track of a meteroite model's loading progress
 const loadingManager = new THREE.LoadingManager( () => {
-	
+  // remove loading screen once the models finish loading
   loadingScreen.classList.add( 'fade-out' ); 
   loadingScreen.addEventListener( 'transitionend', onTransitionEnd );
 
+  // add year text and tooltip when the models finish loading
   yearText.id = "year-text";
-  globeViz.appendChild(yearText);
-    
+  tooltip.id = "tooltip";
+  globeViz.appendChild(yearText);  
+  globeViz.appendChild(tooltip);
 } );
 
 (async () => {
@@ -42,12 +53,21 @@ const loadingManager = new THREE.LoadingManager( () => {
 
     // update points geometry's position
     positionAttribute.setXYZ( index, site.x, site.y, site.z );
+    sizes[index] = PARTICLE_SIZE;
     pointGeometry.attributes.position.needsUpdate = true;
-    // console.log(pointPositions)
+    pointGeometry.attributes.size.needsUpdate = true;
+
+    // add data to each particle
+    pointGeometry.userData.push({
+      city: row.name,
+      class: row.class,
+      mass: row.mass,
+      year: row.year
+    })
 
     const loader = new GLTFLoader( loadingManager);
     loader.load( 'public/asteroid.glb', ( gltf ) => {
-
+      // initalize each meteorite model
       const model = gltf.scene;
       model.scale.set( 0.1, 0.1, 0.1 );
       if (row.long < -20) {
@@ -61,7 +81,8 @@ const loadingManager = new THREE.LoadingManager( () => {
       tl.to(yearText, { duration: 1.2, text: row.year, repeat: 1, repeatDelay: 2, yoyo: true });
       tl.to(model.position, { x: site.x, y: site.y, z: site.z, duration: 1.2, ease: "power1.out" }, "<");
       tl.to(model.scale, 1, { x: 0, y: 0, z: 0 }, "<+=0.5");
-
+      
+      // ring animation
       const animation = () => {
         globe.ringsData([row])
           .ringLat(row.lat)
@@ -70,20 +91,18 @@ const loadingManager = new THREE.LoadingManager( () => {
           .ringRepeatPeriod(3000);
       };
       tl.add(animation, ">");
-      // tl.set({}, {}, "+=1")
 
       setTimeout(() => {      
       scene.add( model );
 
+      // rotate the meteorite model
       (function rotateMeteorite() {
-        // rotate the meteorite model
         model.rotation.x += 0.05;
         model.rotation.y += 0.05;
         model.rotation.z += 0.05;
         requestAnimationFrame(rotateMeteorite);
       })();
-
-      }, 50)
+      }, 50);
     } );
 
     index++;
@@ -119,13 +138,18 @@ const starMaterial = new THREE.MeshPhongMaterial({
 });
 const starField = new THREE.Mesh(starGeometry, starMaterial);
 
-// add point particles to the globe
-const pointMaterial = new THREE.PointsMaterial( { color: 0x00ff02, size: 10, transparent: true,} );
-// add to pointMaterial later-> opacity: 0
+// add point particles
+const pointMaterial = new THREE.PointsMaterial({
+  // transparent: true,
+  // opacity: 0,
+  // depthTest: true,
+  // depthWrite: false
+});
+pointMaterial.onBeforeCompile = shader => {
+  shader.vertexShader = shader.vertexShader.replace('uniform float size;', 'attribute float size;');
+}
 const particles = new THREE.Points( pointGeometry, pointMaterial );
 const positionAttribute = particles.geometry.getAttribute( 'position' );
-globe.add( particles );
-
 
 // setup lights
 const ambientLight = new THREE.AmbientLight(0xe3e3e3, 5);
@@ -149,12 +173,13 @@ scene.add(globe);
 scene.add(ambientLight);
 scene.add(directionalLight);
 scene.add(starField);
+scene.add(particles)
 
 // setup camera
 const camera = new THREE.PerspectiveCamera();
 camera.aspect = window.innerWidth/window.innerHeight;
 camera.updateProjectionMatrix();
-camera.position.set(250,250,10);
+camera.position.set(200,200,10);
 
 // add camera controls
 const controls = new OrbitControls( camera, renderer.domElement );
@@ -163,18 +188,28 @@ controls.maxDistance = 1000;
 controls.rotateSpeed = 0.4;
 controls.zoomSpeed = 0.8;
 
+// add raycaster
+const raycaster = new THREE.Raycaster();
+raycaster.params.Points.threshold = 60;
+const pointer = new THREE.Vector2(99999, 99999);
+
 window.addEventListener( 'resize', onWindowResize );
+window.addEventListener('pointermove', onPointerMove);
 
 // update content's size if the window's size changes
 function onWindowResize() {
-
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
 
   renderer.setSize( window.innerWidth, window.innerHeight );
 
   render();
+}
 
+// keep track of where the cursor moves
+function onPointerMove( event ) {
+  pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+  pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 }
 
 // kick-off renderer
@@ -189,11 +224,31 @@ function onWindowResize() {
 })();
 
 function render() {
+  const geometry = particles.geometry;
+  const attributes = geometry.attributes;
+
+  raycaster.setFromCamera(pointer, camera);
+  
+  let intersects = raycaster.intersectObject(particles);
+  
+  if (intersects.length > 0) {
+    if (INTERSECTED != intersects[0].index) {
+      console.log(intersects[0].index);
+      attributes.size.array[INTERSECTED] = PARTICLE_SIZE;
+      INTERSECTED = intersects[0].index;
+      attributes.size.array[INTERSECTED] = PARTICLE_SIZE * 5;
+      attributes.size.needsUpdate = true;
+
+      tooltip.textContent = `City: ${geometry.userData[INTERSECTED].city}`;
+    }
+  } else if (INTERSECTED !== null) {
+    attributes.size.array[INTERSECTED] = PARTICLE_SIZE;
+    attributes.size.needsUpdate = true;
+    INTERSECTED = null;
+  }
   renderer.render( scene, camera );
 }
 
 function onTransitionEnd( event ) {
-
 	event.target.remove();
-	
 }

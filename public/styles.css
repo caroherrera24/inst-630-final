@@ -117,3 +117,10 @@ html, body {
     -webkit-text-stroke-width: 0.75px;
     -webkit-text-stroke-color: black;
 }
+
+#tooltip {
+    z-index: 1000;
+    position: absolute;
+    top: 10px;
+    left: 0px;
+}
