@@ -127,7 +127,6 @@ const cloudMaterial = new THREE.MeshPhongMaterial({
 const clouds =  new THREE.Mesh(cloudGeometry, cloudMaterial);
 globe.add(clouds);
 
-
 // add stars
 const starLoader = new THREE.TextureLoader().load("public/images/starfield.png");
 const starGeometry = new THREE.SphereGeometry(1000, 200, 50);
@@ -140,10 +139,10 @@ const starField = new THREE.Mesh(starGeometry, starMaterial);
 
 // add point particles
 const pointMaterial = new THREE.PointsMaterial({
-  // transparent: true,
-  // opacity: 0,
-  // depthTest: true,
-  // depthWrite: false
+  transparent: true,
+  opacity: 0,
+  depthTest: true,
+  depthWrite: false
 });
 pointMaterial.onBeforeCompile = shader => {
   shader.vertexShader = shader.vertexShader.replace('uniform float size;', 'attribute float size;');
@@ -159,6 +158,7 @@ directionalLight.position.set(20, 10, 20);
 // setup renderer
 renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setAnimationLoop(animate);
 
 // add renderer to the DOM
 const globeViz = document.createElement("div");
@@ -179,7 +179,7 @@ scene.add(particles)
 const camera = new THREE.PerspectiveCamera();
 camera.aspect = window.innerWidth/window.innerHeight;
 camera.updateProjectionMatrix();
-camera.position.set(200,200,10);
+camera.position.set(225,225,10);
 
 // add camera controls
 const controls = new OrbitControls( camera, renderer.domElement );
@@ -190,8 +190,8 @@ controls.zoomSpeed = 0.8;
 
 // add raycaster
 const raycaster = new THREE.Raycaster();
-raycaster.params.Points.threshold = 60;
-const pointer = new THREE.Vector2(99999, 99999);
+raycaster.params.Points.threshold = PARTICLE_SIZE;
+const pointer = new THREE.Vector2(9999, 9999);
 
 window.addEventListener( 'resize', onWindowResize );
 window.addEventListener('pointermove', onPointerMove);
@@ -203,7 +203,7 @@ function onWindowResize() {
 
   renderer.setSize( window.innerWidth, window.innerHeight );
 
-  render();
+  // renderer.render( scene, camera );
 }
 
 // keep track of where the cursor moves
@@ -212,28 +212,24 @@ function onPointerMove( event ) {
   pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 }
 
-// kick-off renderer
-(function animate() {
-  // rotate the globe and clouds
+function animate() {
+   // rotate the globe and clouds
   // globe.rotation.y += .0005;
   clouds.rotation.y += 0.008 * Math.PI / 180;
 
   controls.update();
-  render();
-  requestAnimationFrame(animate);
-})();
-
-function render() {
   const geometry = particles.geometry;
   const attributes = geometry.attributes;
 
   raycaster.setFromCamera(pointer, camera);
-  
+
   let intersects = raycaster.intersectObject(particles);
-  
+
+  // scene.add( new THREE.ArrowHelper(raycaster.ray.direction, raycaster.ray.origin, 50, 0xff0000));
+
   if (intersects.length > 0) {
     if (INTERSECTED != intersects[0].index) {
-      console.log(intersects[0].index);
+      console.log(intersects[0]);
       attributes.size.array[INTERSECTED] = PARTICLE_SIZE;
       INTERSECTED = intersects[0].index;
       attributes.size.array[INTERSECTED] = PARTICLE_SIZE * 5;
@@ -246,6 +242,7 @@ function render() {
     attributes.size.needsUpdate = true;
     INTERSECTED = null;
   }
+
   renderer.render( scene, camera );
 }
 
