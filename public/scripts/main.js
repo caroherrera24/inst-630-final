@@ -230,6 +230,7 @@ function animation() {
   if (oldIntersect) {
     instancedMesh.setColorAt(oldIntersect, idleColor);
     colorsNeedsUpdate = true;
+    tooltip.setAttribute('aria-hidden', 'true');
     tooltip.classList.add( 'fade-out' ); 
     tooltipText.textContent = '';
   }
@@ -243,6 +244,7 @@ function animation() {
     instancedMesh.setColorAt(instanceId, hoverColor);
     colorsNeedsUpdate = true;
 
+    tooltip.setAttribute('aria-hidden', 'false');
     const currData = instancedMesh.userData[instanceId];
     const str = `<p><span class="bold">City:</span> ${currData.city}</p>
                 <p><span class="bold">Class:</span> ${currData.class}</p>
