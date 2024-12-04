@@ -13,22 +13,21 @@ let loadingScreen = document.querySelector( '#loading-screen' );
 let tooltip = document.querySelector("#tooltip");
 let tooltipText = document.querySelector(".inner-box");
 
-// create scene
-const scene = new THREE.Scene();
-
 // create instanced mesh with box geometry
+// all the meteorite landing sites will be stored in this mesh
 const PARTICLE_SIZE = 2;
 const cubeGeometry = new THREE.BoxGeometry(PARTICLE_SIZE, PARTICLE_SIZE, PARTICLE_SIZE);
 const cubeMaterial = new THREE.MeshBasicMaterial({
   color: 0xffffff,
   transparent: true,
-  opacity: 0.03,
+  opacity: 0.0,
+  depthTest: true,
+  depthWrite: false
 });
 
 const count = 1065;
 let radius = 100;
 const instancedMesh = new THREE.InstancedMesh(cubeGeometry, cubeMaterial, count);
-scene.add(instancedMesh);
 instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 
 // setup userData array to add to later
@@ -45,6 +44,10 @@ for (let i = 0; i < count; i++) {
   instancedMesh.setMatrixAt(i, dummy.matrix);
   instancedMesh.setColorAt(i, idleColor);
 }
+
+// add geometry helper to highlight selected location
+const geometryHelper = new THREE.BoxGeometry(4, 4, 4);
+const helper = new THREE.Mesh( geometryHelper, new THREE.MeshBasicMaterial({color: 0xFF00FF}) );
 
 // keep track of a meteroite model's loading progress
 const loadingManager = new THREE.LoadingManager( () => {
@@ -79,6 +82,7 @@ const loadingManager = new THREE.LoadingManager( () => {
       year: row.year
     });
 
+    // position a cube to each landing site
     dummy.position.set(site.x, site.y, site.z)
     dummy.updateMatrix();
     instancedMesh.setMatrixAt(index, dummy.matrix);
@@ -134,7 +138,7 @@ const globe = new ThreeGlobe()
   .bumpImageUrl('public/images/earth-bump.jpg');
 
 // add clouds to the globe
-let CLOUDS_ALT = 0.02;
+let CLOUDS_ALT = 0.01;
 let cloudRadius = globe.getGlobeRadius() * (1 + CLOUDS_ALT);
 const cloudGeometry = new THREE.SphereGeometry(cloudRadius, 75, 75);
 const cloudLoader = new THREE.TextureLoader().load("public/images/earth-clouds.png");
@@ -173,11 +177,14 @@ globeViz.id = "globeViz";
 globeViz.appendChild(renderer.domElement);
 document.body.insertBefore( globeViz, loadingScreen );
 
-// add to scene
+// setup scene
+const scene = new THREE.Scene();
 scene.add(globe);
 scene.add(ambientLight);
 scene.add(directionalLight);
 scene.add(starField);
+scene.add(instancedMesh);
+scene.add( helper );
 
 // setup camera
 const camera = new THREE.PerspectiveCamera();
@@ -227,23 +234,33 @@ function animation() {
   // update raycaster
   raycaster.setFromCamera(pointer, camera);
   const intersects = raycaster.intersectObject(instancedMesh);
+  // if the cursor isn't hovering over a meteorite landing site, reset tooltip and helper
   if (oldIntersect) {
     instancedMesh.setColorAt(oldIntersect, idleColor);
     colorsNeedsUpdate = true;
     tooltip.setAttribute('aria-hidden', 'true');
     tooltip.classList.add( 'fade-out' ); 
     tooltipText.textContent = '';
+    helper.position.set( 0, 0, 0 );
   }
 
+  // if the cursor is hovering over a meteorite landing site:
   if (intersects.length) {
     // console.log(intersects[0])
     const instanceId = intersects[0].instanceId;
     // console.log(instanceId);
 
+    // for testing purposes, highlight intersected site on the mesh with all the points
     oldIntersect = instanceId;
     instancedMesh.setColorAt(instanceId, hoverColor);
     colorsNeedsUpdate = true;
 
+    // move helper to the meteorite landing site that's being hovered
+    helper.position.set( 0, 0, 0 );
+		helper.lookAt( intersects[ 0 ].face.normal );
+		helper.position.copy( intersects[ 0 ].point );
+
+    // reveal tooltip
     tooltip.setAttribute('aria-hidden', 'false');
     const currData = instancedMesh.userData[instanceId];
     const str = `<p><span class="bold">City:</span> ${currData.city}</p>
@@ -251,7 +268,7 @@ function animation() {
                 <p><span class="bold">Mass:</span> ${currData.mass} g</p>
                 <p>Fell in <span class="bold">${currData.year}</span></p>`;
     tooltip.classList.remove( 'fade-out' ); 
-    tooltipText.innerHTML += str;
+    tooltipText.innerHTML = str;
   }
 
   if (colorsNeedsUpdate)
