@@ -10,22 +10,22 @@ gsap.registerPlugin(TextPlugin);
 let renderer;
 let yearText = document.createElement("p");
 let loadingScreen = document.querySelector( '#loading-screen' );
-let tooltip = document.createElement("div");
+let tooltip = document.querySelector("#tooltip");
+let tooltipText = document.querySelector(".inner-box");
 
 // create scene
 const scene = new THREE.Scene();
 
 // create instanced mesh with box geometry
-const MAX_POINTS = 1065;
-const PARTICLE_SIZE = 1;
+const PARTICLE_SIZE = 2;
 const cubeGeometry = new THREE.BoxGeometry(PARTICLE_SIZE, PARTICLE_SIZE, PARTICLE_SIZE);
 const cubeMaterial = new THREE.MeshBasicMaterial({
   color: 0xffffff,
   transparent: true,
-  opacity: 0.1,
+  opacity: 0.03,
 });
 
-const count = MAX_POINTS;
+const count = 1065;
 let radius = 100;
 const instancedMesh = new THREE.InstancedMesh(cubeGeometry, cubeMaterial, count);
 scene.add(instancedMesh);
@@ -54,9 +54,8 @@ const loadingManager = new THREE.LoadingManager( () => {
 
   // add year text and tooltip when the models finish loading
   yearText.id = "year-text";
-  tooltip.id = "tooltip";
   globeViz.appendChild(yearText);  
-  globeViz.appendChild(tooltip);
+  // globeViz.appendChild(tooltip);
 } );
 
 (async () => {
@@ -76,7 +75,7 @@ const loadingManager = new THREE.LoadingManager( () => {
     instancedMesh.userData.push({
       city: row.name,
       class: row.class,
-      mass: row.mass,
+      mass: row.mass.toLocaleString(),
       year: row.year
     });
 
@@ -135,7 +134,7 @@ const globe = new ThreeGlobe()
   .bumpImageUrl('public/images/earth-bump.jpg');
 
 // add clouds to the globe
-let CLOUDS_ALT = 0.01;
+let CLOUDS_ALT = 0.02;
 let cloudRadius = globe.getGlobeRadius() * (1 + CLOUDS_ALT);
 const cloudGeometry = new THREE.SphereGeometry(cloudRadius, 75, 75);
 const cloudLoader = new THREE.TextureLoader().load("public/images/earth-clouds.png");
@@ -195,7 +194,7 @@ controls.zoomSpeed = 0.8;
 
 // add raycaster
 const raycaster = new THREE.Raycaster();
-raycaster.params.Points.threshold = PARTICLE_SIZE;
+raycaster.params.Points.threshold = PARTICLE_SIZE * 0.75;
 const pointer = new THREE.Vector2(9999,9999);
 
 window.addEventListener( 'resize', onWindowResize );
@@ -219,6 +218,10 @@ function onPointerMove( event ) {
 let oldIntersect = null;
 let colorsNeedsUpdate = false;
 function animation() {
+   // rotate the globe and clouds
+  // globe.rotation.y += .0005;
+  clouds.rotation.y += 0.008 * Math.PI / 180;
+
   controls.update();
 
   // update raycaster
@@ -227,7 +230,8 @@ function animation() {
   if (oldIntersect) {
     instancedMesh.setColorAt(oldIntersect, idleColor);
     colorsNeedsUpdate = true;
-    tooltip.textContent = '';
+    tooltip.classList.add( 'fade-out' ); 
+    tooltipText.textContent = '';
   }
 
   if (intersects.length) {
@@ -239,7 +243,13 @@ function animation() {
     instancedMesh.setColorAt(instanceId, hoverColor);
     colorsNeedsUpdate = true;
 
-    tooltip.textContent = `City: ${instancedMesh.userData[instanceId].city}`;
+    const currData = instancedMesh.userData[instanceId];
+    const str = `<p><span class="bold">City:</span> ${currData.city}</p>
+                <p><span class="bold">Class:</span> ${currData.class}</p>
+                <p><span class="bold">Mass:</span> ${currData.mass} g</p>
+                <p>Fell in <span class="bold">${currData.year}</span></p>`;
+    tooltip.classList.remove( 'fade-out' ); 
+    tooltipText.innerHTML += str;
   }
 
   if (colorsNeedsUpdate)

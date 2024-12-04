@@ -25,7 +25,7 @@ html, body {
  	transition: 1s opacity;
 }
 
-#loading-screen.fade-out {
+#loading-screen.fade-out, #tooltip.fade-out {
     opacity: 0;
 }
 
@@ -120,8 +120,50 @@ html, body {
 }
 
 #tooltip {
+    font-family: 'Orbitron', sans-serif;
     z-index: 1000;
     position: absolute;
-    top: 10px;
-    left: 0px;
+    top: 15%;
+    right: 7.5%;
+    /* border-radius: 0% 10% 0% 10%;; */
+    box-sizing: border-box;
+    padding: 5px;
+    background-clip: border-box;
+    border: solid 1px transparent;
+    clip-path: polygon(0% 0%,
+                        80% 0%,
+                        100% 20%,
+                        100% 100%,
+                        20% 100%,
+                        0% 80%);
+  
+    &:before {
+      content: '';
+      position: absolute;
+      top: 0; right: 0; bottom: 0; left: 0;
+      z-index: -1;
+      margin: -1px;
+      /* border-radius: inherit; */
+      background: linear-gradient(to bottom, #0042BD, #00153B);
+    }
+}
+
+#tooltip .inner-box{
+    background-color: #96B3BF;
+    border: solid 3px #40839D;
+    /* border-radius: 0% 10% 0% 10%;; */
+    padding: 17px;
+}
+
+.inner-box p {
+    margin: 7.5px 0;
+    line-height: 20px;
+    min-width: 125px;
+    color: #000;
+    font-size: 110%;
+}
+
+.bold {
+    font-weight: bold;
+    font-size: 111.5%;
 }
