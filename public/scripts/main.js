@@ -25,6 +25,29 @@ pointGeometry.setAttribute( 'size', new THREE.BufferAttribute( sizes, 1 ) );
 // setup userData array to add to later
 pointGeometry.userData = [];
 
+// Create instanced mesh
+// const cubeGeometry = new THREE.BoxGeometry(PARTICLE_SIZE, PARTICLE_SIZE, PARTICLE_SIZE);
+// const cubeMaterial = new THREE.MeshBasicMaterial({
+//   color: 0xffffff
+// });
+// const count = MAX_POINTS;
+// let radius = 100;
+// const instancedMesh = new THREE.InstancedMesh(cubeGeometry, cubeMaterial, count);
+// scene.add(instancedMesh);
+// instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+// Position cubes on the sphere surface
+// const dummy = new THREE.Object3D();
+// const idleColor = new THREE.Color(0xffffff);
+// const hoverColor = new THREE.Color(0xff0000)
+// for (let i = 0; i < count; i++) {
+//   dummy.position.randomDirection().multiplyScalar(radius);
+//   dummy.scale.setScalar(3)
+//   dummy.updateMatrix();
+//   instancedMesh.setMatrixAt(i, dummy.matrix);
+//   instancedMesh.setColorAt(i, idleColor);
+// }
+
 // keep track of a meteroite model's loading progress
 const loadingManager = new THREE.LoadingManager( () => {
   // remove loading screen once the models finish loading
@@ -41,6 +64,8 @@ const loadingManager = new THREE.LoadingManager( () => {
 (async () => {
   const results = await promiseData("data/cleaned-data.json");
   // console.log(results);
+    // Array to store promises for model loading and geometry updates
+    const updatePromises = [];
 
   // creates timeline for animation
   const tl = gsap.timeline();
@@ -51,19 +76,25 @@ const loadingManager = new THREE.LoadingManager( () => {
     // convert latitude and longitude to polar coordinates
     const site = globe.getCoords(row.lat, row.long);
 
-    // update points geometry's position
-    positionAttribute.setXYZ( index, site.x, site.y, site.z );
-    sizes[index] = PARTICLE_SIZE;
-    pointGeometry.attributes.position.needsUpdate = true;
-    pointGeometry.attributes.size.needsUpdate = true;
+        // // update points geometry's position
+        positionAttribute.setXYZ( index, site.x, site.y, site.z );
+        sizes[index] = PARTICLE_SIZE;
+        pointGeometry.attributes.position.needsUpdate = true;
+        pointGeometry.attributes.size.needsUpdate = true;
 
-    // add data to each particle
-    pointGeometry.userData.push({
-      city: row.name,
-      class: row.class,
-      mass: row.mass,
-      year: row.year
-    })
+        // // add data to each particle
+        pointGeometry.userData.push({
+          city: row.name,
+          class: row.class,
+          mass: row.mass,
+          year: row.year
+        });
+
+  // dummy.position.set(site.x, site.y, site.z)
+  // dummy.updateMatrix();
+  // instancedMesh.setMatrixAt(index, dummy.matrix);
+  // instancedMesh.instanceMatrix.needsUpdate = true; 
+  // instancedMesh.setColorAt(index, idleColor);
 
     const loader = new GLTFLoader( loadingManager);
     loader.load( 'public/asteroid.glb', ( gltf ) => {
@@ -104,7 +135,6 @@ const loadingManager = new THREE.LoadingManager( () => {
       })();
       }, 50);
     } );
-
     index++;
   }
 })();
@@ -139,10 +169,10 @@ const starField = new THREE.Mesh(starGeometry, starMaterial);
 
 // add point particles
 const pointMaterial = new THREE.PointsMaterial({
-  transparent: true,
-  opacity: 0,
-  depthTest: true,
-  depthWrite: false
+  // transparent: true,
+  // opacity: 0,
+  // depthTest: true,
+  // depthWrite: false
 });
 pointMaterial.onBeforeCompile = shader => {
   shader.vertexShader = shader.vertexShader.replace('uniform float size;', 'attribute float size;');
@@ -159,6 +189,7 @@ directionalLight.position.set(20, 10, 20);
 renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setAnimationLoop(animate);
+// renderer.setAnimationLoop(animation);
 
 // add renderer to the DOM
 const globeViz = document.createElement("div");
@@ -178,8 +209,8 @@ scene.add(particles)
 // setup camera
 const camera = new THREE.PerspectiveCamera();
 camera.aspect = window.innerWidth/window.innerHeight;
+camera.position.set(200,200,10);
 camera.updateProjectionMatrix();
-camera.position.set(225,225,10);
 
 // add camera controls
 const controls = new OrbitControls( camera, renderer.domElement );
@@ -191,10 +222,10 @@ controls.zoomSpeed = 0.8;
 // add raycaster
 const raycaster = new THREE.Raycaster();
 raycaster.params.Points.threshold = PARTICLE_SIZE;
-const pointer = new THREE.Vector2(9999, 9999);
-
+const pointer = new THREE.Vector2(9999,9999);
 window.addEventListener( 'resize', onWindowResize );
 window.addEventListener('pointermove', onPointerMove);
+document.addEventListener('pointerout', () => pointer.set(99999, 99999));
 
 // update content's size if the window's size changes
 function onWindowResize() {
@@ -225,11 +256,10 @@ function animate() {
 
   let intersects = raycaster.intersectObject(particles);
 
-  // scene.add( new THREE.ArrowHelper(raycaster.ray.direction, raycaster.ray.origin, 50, 0xff0000));
-
   if (intersects.length > 0) {
+    console.log(intersects);
     if (INTERSECTED != intersects[0].index) {
-      console.log(intersects[0]);
+      // console.log(intersects[0]);
       attributes.size.array[INTERSECTED] = PARTICLE_SIZE;
       INTERSECTED = intersects[0].index;
       attributes.size.array[INTERSECTED] = PARTICLE_SIZE * 5;
@@ -241,10 +271,41 @@ function animate() {
     attributes.size.array[INTERSECTED] = PARTICLE_SIZE;
     attributes.size.needsUpdate = true;
     INTERSECTED = null;
+    tooltip.textContent = '';
   }
 
   renderer.render( scene, camera );
 }
+
+// let oldIntersect = null;
+// let colorsNeedsUpdate = false;
+
+// function animation(time) {
+
+//   //controls.update();
+//   // Update raycaster
+//   raycaster.setFromCamera(pointer, camera);
+//   const intersects = raycaster.intersectObject(instancedMesh);
+//    if (oldIntersect) {
+//     instancedMesh.setColorAt(oldIntersect, idleColor);
+//     colorsNeedsUpdate = true;
+//   }
+
+//   if (intersects.length) {
+//     console.log(intersects)
+//     const instanceId = intersects[0].instanceId;
+
+//     oldIntersect = instanceId;
+//     instancedMesh.setColorAt(instanceId, hoverColor);
+//     colorsNeedsUpdate = true;
+//   }
+
+//   if (colorsNeedsUpdate)
+//     instancedMesh.instanceColor.needsUpdate = true;
+
+//   renderer.render(scene, camera);
+
+// }
 
 function onTransitionEnd( event ) {
 	event.target.remove();
