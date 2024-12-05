@@ -16,6 +16,7 @@ let tooltipText = document.querySelector(".inner-box");
 
 // create instanced mesh with box geometry
 // all the meteorite landing sites will be stored in this mesh
+// mesh is based on https://jsfiddle.net/b839q5sd/
 const PARTICLE_SIZE = 2;
 const cubeGeometry = new THREE.BoxGeometry(PARTICLE_SIZE, PARTICLE_SIZE, PARTICLE_SIZE);
 const cubeMaterial = new THREE.MeshBasicMaterial({
@@ -53,6 +54,7 @@ const helper = new THREE.Mesh( geometryHelper, new THREE.MeshBasicMaterial({colo
 // keep track of a meteroite model's loading progress
 const loadingManager = new THREE.LoadingManager( () => {
   // remove loading screen once the models finish loading
+  // learned how to fade out loading screen from https://jsfiddle.net/sojzu8a5/1/
   loadingScreen.classList.add( 'fade-out' ); 
   loadingScreen.addEventListener( 'transitionend', onTransitionEnd );
 
@@ -155,6 +157,7 @@ const clouds =  new THREE.Mesh(cloudGeometry, cloudMaterial);
 globe.add(clouds);
 
 // add stars
+// based off of https://mattloftus.github.io/2016/02/03/threejs-p2/
 const starLoader = new THREE.TextureLoader().load("public/images/starfield.png");
 const starGeometry = new THREE.SphereGeometry(1000, 200, 50);
 const starMaterial = new THREE.MeshPhongMaterial({
@@ -238,6 +241,8 @@ function animation() {
   // update raycaster
   raycaster.setFromCamera(pointer, camera);
   const intersects = raycaster.intersectObject(instancedMesh);
+
+  // update logic in animation() is based on https://jsfiddle.net/b839q5sd/
   // if the cursor isn't hovering over a meteorite landing site, reset tooltip and helper
   if (oldIntersect) {
     instancedMesh.setColorAt(oldIntersect, idleColor);
@@ -260,6 +265,7 @@ function animation() {
     colorsNeedsUpdate = true;
 
     // move helper to the meteorite landing site that's being hovered
+    // based off https://threejs.org/examples/?q=raycas#webgl_geometry_terrain_raycast
     helper.position.set( 0, 0, 0 );
 		helper.lookAt( intersects[ 0 ].face.normal );
 		helper.position.copy( intersects[ 0 ].point );
