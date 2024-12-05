@@ -9,6 +9,7 @@ gsap.registerPlugin(TextPlugin);
 
 let renderer;
 let yearText = document.createElement("p");
+let instr = document.createElement("p");
 let loadingScreen = document.querySelector( '#loading-screen' );
 let tooltip = document.querySelector("#tooltip");
 let tooltipText = document.querySelector(".inner-box");
@@ -57,7 +58,10 @@ const loadingManager = new THREE.LoadingManager( () => {
 
   // add year text and tooltip when the models finish loading
   yearText.id = "year-text";
+  instr.id = "instructions"
+  instr.textContent = "Hover over meteorite landing sites for more information."
   globeViz.appendChild(yearText);  
+  globeViz.appendChild(instr);
   // globeViz.appendChild(tooltip);
 } );
 
