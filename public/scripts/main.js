@@ -7,12 +7,30 @@ import ThreeGlobe from "three-globe";
 gsap.registerPlugin(EasePack);
 gsap.registerPlugin(TextPlugin);
 
-let renderer;
 let yearText = document.createElement("p");
 let instr = document.createElement("p");
 let loadingScreen = document.querySelector( '#loading-screen' );
 let tooltip = document.querySelector("#tooltip");
 let tooltipText = document.querySelector(".inner-box");
+
+// setup camera
+const camera = new THREE.PerspectiveCamera();
+camera.aspect = window.innerWidth/window.innerHeight;
+camera.position.set(220,220,10);
+camera.updateProjectionMatrix();
+
+// setup renderer
+let renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setAnimationLoop(animation);
+
+// get direction the camera is facing
+const cameraDirection = new THREE.Vector3();
+camera.getWorldDirection(cameraDirection);
+
+// setup clipping plane for the cube material based on the camera direction
+let localPlane = new THREE.Plane( cameraDirection );
+renderer.localClippingEnabled = true;
 
 // create instanced mesh with box geometry
 // all the meteorite landing sites will be stored in this mesh
@@ -24,7 +42,10 @@ const cubeMaterial = new THREE.MeshBasicMaterial({
   transparent: true,
   opacity: 0.0,
   depthTest: true,
-  depthWrite: false
+  depthWrite: false,
+  side: THREE.FrontSide,
+  clippingPlanes: [ localPlane ],
+  clipShadows: true
 });
 
 const count = 1065;
@@ -172,11 +193,6 @@ const ambientLight = new THREE.AmbientLight(0xe3e3e3, 5);
 const directionalLight = new THREE.DirectionalLight(0xfdfcf0, 1);
 directionalLight.position.set(20, 10, 20);
 
-// setup renderer
-renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setAnimationLoop(animation);
-
 // add renderer to the DOM
 const globeViz = document.createElement("div");
 globeViz.id = "globeViz";
@@ -192,12 +208,6 @@ scene.add(directionalLight);
 scene.add(starField);
 scene.add(instancedMesh);
 scene.add( helper );
-
-// setup camera
-const camera = new THREE.PerspectiveCamera();
-camera.aspect = window.innerWidth/window.innerHeight;
-camera.position.set(220,220,10);
-camera.updateProjectionMatrix();
 
 // add camera controls
 const controls = new OrbitControls( camera, renderer.domElement );
@@ -238,6 +248,16 @@ function animation() {
 
   controls.update();
 
+  // update camera direction
+  camera.getWorldDirection(cameraDirection);
+
+  // make a plane that excludes sites on the back half of the globe (facing away from the camera)
+  // these points will not be rendered
+  localPlane = new THREE.Plane( cameraDirection.multiplyScalar(-1) );
+
+  // update clipping plane for the cube material
+  cubeMaterial.clippingPlanes = [localPlane];
+
   // update raycaster
   raycaster.setFromCamera(pointer, camera);
   const intersects = raycaster.intersectObject(instancedMesh);
@@ -255,9 +275,8 @@ function animation() {
 
   // if the cursor is hovering over a meteorite landing site:
   if (intersects.length) {
-    // console.log(intersects[0])
+    const instance = intersects[ 0 ];
     const instanceId = intersects[0].instanceId;
-    // console.log(instanceId);
 
     // for testing purposes, highlight intersected site on the mesh with all the points
     oldIntersect = instanceId;
@@ -267,10 +286,12 @@ function animation() {
     // move helper to the meteorite landing site that's being hovered
     // based off https://threejs.org/examples/?q=raycas#webgl_geometry_terrain_raycast
     helper.position.set( 0, 0, 0 );
-		helper.lookAt( intersects[ 0 ].face.normal );
-		helper.position.copy( intersects[ 0 ].point );
+		helper.lookAt( instance.face.normal );
+		helper.position.copy( instance.point );
 
-    // reveal tooltip
+    // reveal tooltip if dot product of camera direction and intersected point is greater than 0
+    let dotProduct = instance.point.dot(cameraDirection);
+    if (dotProduct > 0) {
     tooltip.setAttribute('aria-hidden', 'false');
     const currData = instancedMesh.userData[instanceId];
     const str = `<p><span class="bold">City:</span> ${currData.city}</p>
@@ -279,6 +300,7 @@ function animation() {
                 <p>Fell in <span class="bold">${currData.year}</span></p>`;
     tooltip.classList.remove( 'fade-out' ); 
     tooltipText.innerHTML = str;
+    }
   }
 
   if (colorsNeedsUpdate)
