@@ -82,7 +82,7 @@ const loadingManager = new THREE.LoadingManager( () => {
   // add year text and tooltip when the models finish loading
   yearText.id = "year-text";
   instr.id = "instructions"
-  instr.textContent = "Hover over meteorite landing sites for more information."
+  instr.textContent = "Watch meteorites fall.\nHover over landing sites for more information."
   globeViz.appendChild(yearText);  
   globeViz.appendChild(instr);
   // globeViz.appendChild(tooltip);

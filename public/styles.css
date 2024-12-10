@@ -13,7 +13,7 @@ html, body {
     color: white;
 }
 
-/* based off https://jsfiddle.net/sojzu8a5/1/*/
+/* based off https://jsfiddle.net/sojzu8a5/1/ */
 #loading-screen {
 	position: absolute;
 	z-index: 2;
@@ -24,6 +24,7 @@ html, body {
 	background-color: #000000;
 	opacity: 1;
  	transition: 1s opacity;
+    border: 1px solid transparent;
 }
 
 #loading-screen.fade-out, #tooltip.fade-out {
@@ -40,7 +41,6 @@ html, body {
     font-family: 'Orbitron', sans-serif;
 }
 
-/* progress circle is inspired by https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_loader */
 #progress-circle{
     display: block;
     position: relative;
@@ -50,10 +50,44 @@ html, body {
     height: 150px;
     margin: -75px 0 0 -75px;
     border-radius: 50%;
-    border: 6px solid #f3f3f3;
-    border-top:  6px solid #1f8ab9;
-    -webkit-animation: spin 2s linear infinite;
-    animation: spin 2s linear infinite;
+    border: 12px solid #BA55D3;
+    border: 6px solid transparent;
+    border-top-color: #1f8ab9;
+    border-bottom-color: #1f8ab9;
+    -webkit-animation: spin 2.5s linear infinite;
+    animation: spin 2.5s linear infinite;
+    /* background: rgb(2,0,36); */
+}
+
+#progress-circle:before {
+    content: "";
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    right: 15px;
+    bottom: 15px;
+    border-radius: 50%;
+    border: 6px solid transparent;
+    border-top-color: #00b3ff;;
+    border-bottom-color: #00b3ff;
+    -webkit-animation: spin 3s linear infinite;
+    animation: spin 3s linear infinite;
+
+}
+
+#progress-circle:after {
+    content: "";
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    border-radius: 50%;
+    border: 6px solid transparent;
+    border-top-color: #5aceff;
+    border-bottom-color: #5aceff;
+    -webkit-animation: spin 4s linear infinite;
+    animation: spin 4s linear infinite;
 }
 
 @-webkit-keyframes spin {
