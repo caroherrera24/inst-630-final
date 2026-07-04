@@ -82,7 +82,7 @@ const loadingManager = new THREE.LoadingManager( () => {
   // add year text and tooltip when the models finish loading
   yearText.id = "year-text";
   instr.id = "instructions"
-  instr.textContent = "Watch meteorites fall.\nHover over landing sites for more information."
+  instr.textContent = "Rotate the Earth and watch meteorites fall.\nHover over landing sites for more information."
   globeViz.appendChild(yearText);  
   globeViz.appendChild(instr);
   // globeViz.appendChild(tooltip);
@@ -129,7 +129,7 @@ const loadingManager = new THREE.LoadingManager( () => {
       // model.position.set(site.x, site.y, site.z);
 
       // add animation for meteorite landings on the globe
-      tl.to(yearText, { duration: 1.2, text: row.year, repeat: 1, repeatDelay: 2, yoyo: true });
+      // tl.to(yearText, { duration: 1.2, text: row.year, repeat: 1, repeatDelay: 2, yoyo: true });
       tl.to(model.position, { x: site.x, y: site.y, z: site.z, duration: 1.2, ease: "power1.out" }, "<");
       tl.to(model.scale, 1, { x: 0, y: 0, z: 0 }, "<+=0.5");
       
